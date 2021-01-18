@@ -175,6 +175,8 @@ table td {
   color: #8f93a2;
   font-size: 14px;
   line-height: 20px;
+  counter-reset: line;
+  white-space: pre-wrap;
 }
 figure.highlight {
   position: relative;
@@ -223,6 +225,15 @@ blockquote {
 .article-container .highlight .line::selection {
   background: rgba(113,124,180,0.314);
   color: #8f93a2;
+}
+.article-container .highlight .line:before {
+  display: inline-block;
+  padding: 0 0.3rem 0 0;
+  min-width: 1.6rem;
+  color: rgba(59,63,81,0.502);
+  content: counter(line);
+  counter-increment: line;
+  text-align: left;
 }
 .article-container .highlight table {
   position: relative;
@@ -507,7 +518,7 @@ footer.is-mobile {
   margin-bottom: 1rem;
   background-color: #49b1f5;
   background-attachment: fixed;
-  background-position: center;
+  background-position: right 90%;
   -webkit-background-size: cover;
   -moz-background-size: cover;
   background-size: cover;
@@ -547,7 +558,7 @@ footer.is-mobile {
   -webkit-align-items: center;
   align-items: center;
   padding: 0 1rem;
-  height: 60vh;
+  height: 80vh;
 }
 #site-title,
 #site-sub-title {
@@ -1107,7 +1118,7 @@ footer.is-mobile {
   margin-bottom: 1rem;
   background-color: #49b1f5;
   background-attachment: fixed;
-  background-position: center;
+  background-position: center bottom;
   -webkit-background-size: cover;
   -moz-background-size: cover;
   background-size: cover;
@@ -1173,7 +1184,7 @@ footer.is-mobile {
   align-items: center;
   padding: 0 1rem;
   width: 100%;
-  height: 60vh;
+  height: 80vh;
   color: #eee;
   text-align: center;
 }

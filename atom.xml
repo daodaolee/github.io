@@ -6,7 +6,7 @@
   <link href="https://daodaolee.cn/atom.xml" rel="self"/>
   
   <link href="https://daodaolee.cn/"/>
-  <updated>2021-01-18T13:28:47.778Z</updated>
+  <updated>2021-01-24T10:53:40.626Z</updated>
   <id>https://daodaolee.cn/</id>
   
   <author>
@@ -17,22 +17,28 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>Hello World</title>
-    <link href="https://daodaolee.cn/2021/01/18/hello-world/"/>
-    <id>https://daodaolee.cn/2021/01/18/hello-world/</id>
-    <published>2021-01-18T13:28:47.778Z</published>
-    <updated>2021-01-18T13:28:47.778Z</updated>
+    <title>http的option请求</title>
+    <link href="https://daodaolee.cn/2019/06/24/http%E7%9A%84option%E8%AF%B7%E6%B1%82/"/>
+    <id>https://daodaolee.cn/2019/06/24/http%E7%9A%84option%E8%AF%B7%E6%B1%82/</id>
+    <published>2019-06-24T10:50:08.000Z</published>
+    <updated>2021-01-24T10:53:40.626Z</updated>
     
-    <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>]]></content>
+    <content type="html"><![CDATA[<p>先看两张图：</p><p><img src="https://i.loli.net/2019/06/20/5d0b73254660812409.png"></p><p><img src="https://i.loli.net/2019/06/20/5d0b732a2829499623.png"></p><p>流程是这样：选择支付方式，填入充值金额，跳转到“选择银行卡界面”，但是在跳转的过程中走了2次<code>get_card</code>请求。</p><p>由于模块是H5纯静态页面，肯定会遇到跨域的问题，之前是用<code>jsonp</code>解决的，但是现在需要给后端传一堆<code>headers</code> 头部信息，然后，jsonp就不行了，因为他的实质是src标签，然后用callback传的，而且只能传get，所以这次接口的改动，只能让后端配置CORS了，也就是<code>Allow-Control-Allow-Origin: *</code> 和<code>Allow-Control-Allow-Methods:GET,POST</code> 让后端配置这个就可以了，再保险点，把<code>*</code> 变成<code>访问地址</code> ，然后就出现了上面的情况，第一次的<code>Request Method:OPTION</code> ，而且没有发送请求头，第二次就是 正常的post了。</p><p>出现第一次的原因是探测请求，客户端可以在采取具体资源请求之前，决定对该资源采取何种必要措施，或者了解服务器的性能。</p><blockquote><p>在ajax中出现options请求，也是一种提前探测的情况，ajax跨域请求时，如果请求的是json，就属于复杂请求，因此需要提前发出一次options请求，用以检查请求是否是可靠安全的，如果options获得的回应是拒绝性质的，比如404\403\500等http状态，就会停止post、put等请求的发出。</p></blockquote><p>如果你查资料(W3C规范)，你会发现在跨域请求中，分为简单请求（get和部分post，post时content-type属于application/x-www-form-urlencoded，multipart/form-data，text/plain中的一种）和复杂请求。而复杂请求发出之前，就会出现一次options请求。</p><p>参考资料：</p><p><a href="http://www.tangshuang.net/2271.html">jquery ajax 请求中多出现一次OPTIONS请求及其解决办法</a></p>]]></content>
     
     
       
       
-    <summary type="html">&lt;p&gt;Welcome to &lt;a href=&quot;https://hexo.io/&quot;&gt;Hexo&lt;/a&gt;! This is your very first post. Check &lt;a href=&quot;https://hexo.io/docs/&quot;&gt;documentation&lt;/a&gt; for</summary>
+    <summary type="html">&lt;p&gt;先看两张图：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://i.loli.net/2019/06/20/5d0b73254660812409.png&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://i.loli.net/2019/06/20/5d0b732a282</summary>
       
     
     
     
+    
+    <category term="http" scheme="https://daodaolee.cn/tags/http/"/>
+    
+    <category term="option" scheme="https://daodaolee.cn/tags/option/"/>
     
   </entry>
   

@@ -51,9 +51,11 @@
 <li><p><code>Promise.race(iterable)</code></p>
 <p>当 iterable 参数里任意一个子 promise 成功或者失败，就结束。接着就会调用父promise后面绑定的相应逻辑，就会接着往下运行(只要一个有结果就会接着网后走)。</p>
 <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> p1 = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">setTimeout</span>(resolve(<span class="string">&quot;1&quot;</span>, <span class="number">5000</span>))</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">const</span> p2 = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">setTimeout</span>(resolve(<span class="string">&quot;2&quot;</span>, <span class="number">1000</span>))</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="built_in">Promise</span>.race([p1, p2]).then(<span class="function"><span class="params">value</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(value);</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2</span></span><br></pre></td></tr></table></figure>
-<h2 id="原型"><a href="#原型" class="headerlink" title="原型"></a>原型</h2></li>
+
+
+</li>
 </ol>
-<p>通过 <code>Promise.prototype</code> ，可以看到它的原型链上有个三个方法：</p>
+<h2 id="原型"><a href="#原型" class="headerlink" title="原型"></a>原型</h2><p>通过 <code>Promise.prototype</code> ，可以看到它的原型链上有个三个方法：</p>
 <ol>
 <li><p><code>Promise.prototype.then(onFulfilled, onRejected)</code></p>
 <p>给当前的 Promise 添加 解决 和 拒绝 回调，并返回一个 Promise，所以可以进行链式调用。</p>
@@ -67,7 +69,7 @@
 </li>
 </ol>
 <h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>知道了 <code>Promise</code> 的内部结构之后，我们来简单的实现一个 Promise（实现的细节要与规范符合）。</p>
-<p><code>myPromise </code> 实现思路：</p>
+<p><code>myPromis </code> 实现思路：</p>
 <ol>
 <li>Promise 是 new 出来的，而且需要一个 executor 执行器</li>
 <li>executor 带入 resolve 和 reject</li>

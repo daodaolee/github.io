@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="一文讲解浏览器运行渲染机制、JS任务队列及事件循环"><meta name="keywords" content="JS,异步,任务队列，事件循环"><meta name="author" content="DaoDaoLee"><meta name="copyright" content="DaoDaoLee"><title>DaoDaoLeeのBlog | DaoDaoLeeのBlog</title><link rel="shortcut icon" href="/avatar.ico"><link rel="stylesheet" href="/css/index.css?version=1.9.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.9.0"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css"><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script><script src="https://cdn.jsdelivr.net/npm/blueimp-md5@2.10.0/js/md5.min.js"></script><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><script src="https://v1.hitokoto.cn/?encode=js&amp;charset=utf-8&amp;select=.footer_custom_text" defer></script><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  hexoVersion: '5.3.0'
+} </script><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="DaoDaoLeeのBlog" type="application/atom+xml">
+</head><body><canvas class="fireworks"></canvas><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar" data-display="true"><div class="toggle-sidebar-info text-center"><span data-toggle="切换文章详情">切换站点概览</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E5%92%8C%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">进程和线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8F%E8%A7%88%E5%99%A8"><span class="toc-number">2.</span> <span class="toc-text">浏览器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E6%88%90"><span class="toc-number">2.1.</span> <span class="toc-text">构成</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%B7%E6%B1%82%EF%BC%8C%E5%93%8D%E5%BA%94"><span class="toc-number">2.2.</span> <span class="toc-text">请求，响应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%B2%E6%9F%93"><span class="toc-number">2.3.</span> <span class="toc-text">渲染</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JS%E5%8D%95%E7%BA%BF%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">JS单线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%BB%E5%8A%A1%E9%98%9F%E5%88%97"><span class="toc-number">4.</span> <span class="toc-text">任务队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF-Event-Loop"><span class="toc-number">5.</span> <span class="toc-text">事件循环(Event Loop)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A6%82%E5%BF%B5"><span class="toc-number">5.1.</span> <span class="toc-text">概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9A%E6%97%B6%E5%99%A8"><span class="toc-number">5.2.</span> <span class="toc-text">定时器</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BE%AE%E4%BB%BB%E5%8A%A1-MicroTask-%E5%92%8C%E5%AE%8F%E4%BB%BB%E5%8A%A1-MacroTask"><span class="toc-number">6.</span> <span class="toc-text">微任务(MicroTask)和宏任务(MacroTask)</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://i.loli.net/2021/01/18/fopmHdOvFYr5Q7h.jpg"></div><div class="author-info__name text-center">DaoDaoLee</div><div class="author-info__description text-center"></div><div class="follow-button"><a target="_blank" rel="noopener" href="https://github.com/daodaolee">Follow Me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/archives"><span class="pull-left">文章</span><span class="pull-right">6</span></a><a class="author-info-articles__tags article-meta" href="/tags"><span class="pull-left">标签</span><span class="pull-right">9</span></a><a class="author-info-articles__categories article-meta" href="/categories"><span class="pull-left">分类</span><span class="pull-right">3</span></a></div><hr><div class="author-info-links"><div class="author-info-links__title text-center">Links</div><a class="author-info-links__name text-center" target="_blank" rel="noopener" href="https://molunerfinn.com">Molunerfinn</a><a class="author-info-links__name text-center" target="_blank" rel="noopener" href="https://piegg.cn">PiEgg</a></div></div></div><div id="content-outer"><div id="top-container" style="background-image: url(https://i.loli.net/2021/01/23/OvztMyob9GYxBgn.jpg)"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/">DaoDaoLeeのBlog</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right menus">   <a class="site-page" href="/">主页</a><a class="site-page" href="/archives">文章</a><a class="site-page" href="/tags">标签</a><a class="site-page" href="/categories">分类</a><a class="site-page" href="/about">关于</a></span><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> 搜索</span></a></span></div><div id="post-info"><div id="post-title">一文讲解浏览器运行渲染机制、JS任务队列及事件循环</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2021-01-31</time><div class="post-meta-wordcount"><span>字数总计: </span><span class="word-count">3.9k</span><span class="post-meta__separator">|</span><span>阅读时长: 11 分钟</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><p>你是不是有过以下困难：</p>
+<ul>
+<li>多个方法互相嵌套，但是最终还是蒙对了</li>
+<li>不是很明白为什么浏览器有时候会卡死</li>
+<li>事件循环好像知道那么点，但是就是讲不出来为啥</li>
+<li>……</li>
+</ul>
+<p>本篇文章就把你的问题给一一解答，当然这些东西想完弄清楚，肯定离不开<strong>进程</strong>，<strong>线程</strong>，<strong>浏览器内核</strong>，<strong>渲染</strong>，<strong>事件循环</strong>，任务队列等，我们就一个一个的来看，他们到底是怎么工作的。</p>
+<h2 id="进程和线程"><a href="#进程和线程" class="headerlink" title="进程和线程"></a>进程和线程</h2><p>举个例子，一个工厂，它有自己独立的资源，工厂和工厂之间相互独立，各自做各自的事情。一个场子可以有很多工人，工人可以 单个作业 也可以 协同作业，工人做的事情，都只会在自己的工厂内，并且共享这个工厂的空间。</p>
+<p>我们现在把概念放到进程上，一个进程就相当于一个工厂，工厂里的资源就相当于系统分配的独立内存，多个工厂各自做各自的事情就相当于进程之间相互独立，一个工厂有很多工人就相当于一个进程可以有很多线程，工人的作业就相当于线程完成任务，工人共享这个工厂的空间，就相当于一个进程下面的线程之间可以共享程序的内存。</p>
+<p><img src="https://i.loli.net/2021/01/31/tONwQshzkDrBpZF.png" alt="进程和线程"></p>
+<p>在 <strong>windows</strong> 的任务管理器中 CPU 和 内存 可以把每个进程的占用看的很清楚，当然 <strong>iOS</strong> 从活动监视器中也可以看到。所以：<strong>进程是 cpu 资源分配的最小单位，线程是cpu调度的最小单位</strong>。</p>
+<p><img src="https://i.loli.net/2021/01/31/q85RksFWeVrxNfK.png"></p>
+<p><img src="https://i.loli.net/2021/01/31/jznfuqWstbFwl8E.png"></p>
+<p><strong>大家所说的多线程和单线程，都是只在一个进程内的多和单！</strong></p>
+<h2 id="浏览器"><a href="#浏览器" class="headerlink" title="浏览器"></a>浏览器</h2><h3 id="构成"><a href="#构成" class="headerlink" title="构成"></a>构成</h3><p><em>前提：页面是跑在浏览器上的，也就是说浏览器是页面的载体，浏览器会制定一套规则，页面满足了这个规则然后才可以在到浏览器上正常运行。</em></p>
+<p>浏览器本质上其实是一个软件，它运行在一个操作系统上(windows 或 iOS 或 其他)，一般来说操作系统会开一个端口去运行这个软件，也就是为这个进程分配了CPU，内存 和 磁盘空间等。</p>
+<p>那浏览器是单进程还是多进程呢？我们看一下：</p>
+<p><img src="https://i.loli.net/2021/01/31/oi3gbNvJMl8sTaW.png"></p>
+<p>可见它是个多个进程的浏览器！</p>
+<p>在 Chrome 多进程架构里，它包括了四个进程：</p>
+<ul>
+<li>Browser进程（负责地址栏、书签栏、前进后退、网络请求、文件访问等）</li>
+<li>Renderer进程（<strong>负责一个Tab内所有和网页渲染有关的所有事情，是最核心的进程</strong>）</li>
+<li>GPU进程（负责GPU相关的任务）</li>
+<li>Plugin进程（负责Chrome插件相关的任务）</li>
+</ul>
+<p>如果你打开它的任务管理器，你会发现：</p>
+<p><img src="https://i.loli.net/2021/01/31/7vsm89SFdLMwTZk.png"></p>
+<p>上图我们可以看出：一个标签页就是一个进程，甚至一个扩展程序就是一个进程！在浏览器中打开一个网页就相当于新开了一个进程。</p>
+<p><strong>但是：在这里浏览器有自己的优化机制，有时候打开多个标签页，进程会合并，所以每一个标签页对应一个进程不是绝对的。</strong></p>
+<p>这样的多进程分配的好处是：</p>
+<ul>
+<li>如果一个页面挂了，不会影响其他页面，甚至影响到整个浏览器</li>
+<li>避免安装的三方插件等影响了浏览器全局</li>
+<li>多进程充分利用了多核的优势</li>
+<li>把插件，扩展程序等全部隔离，提高稳定性</li>
+</ul>
+<p>当然，缺点很就明显了，内存消耗大，确实有点像空间换时间的意思。</p>
+<h3 id="请求，响应"><a href="#请求，响应" class="headerlink" title="请求，响应"></a>请求，响应</h3><p>接下来我们看下浏览器是如何通过输入内容来请求成功的。</p>
+<ol>
+<li><p>当用户在地址栏输入内容时，UI线程首先问的是“这是搜索查询还是URL？”。在Chrome浏览器中，地址栏也是搜索输入字段，因此UI线程需要解析并决定是将您发送到搜索引擎还是请求的网站。</p>
+<p><img src="https://i.loli.net/2021/01/31/YRkZwCcaKbHQJrf.png"></p>
+</li>
+<li><p>当用户按下Enter键时，UI线程会发起网络调用以获取网站内容。加载微调框显示在选项卡的角上，并且网络线程通过相应的协议（例如DNS查找和为请求建立TLS连接）。</p>
+<p>此时，网络线程可能会收到服务器重定向标头，例如HTTP301。在这种情况下，网络线程与服务器正在请求重定向的UI线程进行通信。然后，将启动另一个URL请求。</p>
+<p><img src="https://i.loli.net/2021/01/31/oThNMwPYd2tSniV.png"></p>
+</li>
+<li><p>一旦有响应了，网络线程将在必要时查看流的前几个字节。响应的Content-Type标头应说明它是什么数据类型，但是由于可能丢失或错误， 因此在此处进行MIME Type检查。</p>
+<p>如果响应是HTML文件，则下一步是将数据传递到渲染器进程，但是如果是zip文件或其他文件，则意味着这是下载请求，因此他们需要将数据传递到下载管理器。</p>
+<p><img src="https://i.loli.net/2021/01/31/r6d4iczGNKPeXSg.png"></p>
+</li>
+<li><p>网络线程从安全站点询问响应数据是否为HTML，并进行安全检查。</p>
+<p><img src="https://i.loli.net/2021/01/31/QtOaw7foH4rMYnS.png"></p>
+<p>在这个时候，浏览器已经拿到响应了，接下来就开始进行渲染了。</p>
+</li>
+<li><p>一旦完成所有检查，并且Network线程确信浏览器应导航到请求的站点，则Network线程将告知UI线程数据已准备就绪。然后，UI线程找到一个渲染器进程来进行网页渲染。</p>
+<p><img src="https://i.loli.net/2021/01/31/XE7mOI4DY5L8qP1.png"></p>
+</li>
+<li><p>现在已经准备好数据和渲染器进程，将IPC从浏览器进程发送到渲染器进程以提交导航。它还会传递数据流，因此渲染器进程可以继续接收HTML数据。一旦浏览器进程听到确认已在渲染器进程中进行提交的确认，导航即完成，文档加载阶段开始。</p>
+<p>此时，地址栏已更新，安全指示符和站点设置UI反映了新页面的站点信息。选项卡的会话历史记录将被更新，因此后退/前进按钮将逐步浏览刚刚导航到的站点。为了方便在关闭选项卡或窗口时恢复选项卡/会话，会话历史记录存储在磁盘上。</p>
+<p><img src="https://i.loli.net/2021/01/31/vw3jBpUnIEf8Dxs.png"></p>
+</li>
+</ol>
+<p>   <img src="https://i.loli.net/2021/01/31/yCzPAlLBwdtOKEI.png"></p>
+<p>到这里为止，浏览器的请求和响应就完成了。那在响应之后如何渲染呢，我们接着往下看</p>
+<h3 id="渲染"><a href="#渲染" class="headerlink" title="渲染"></a>渲染</h3><p>先说几个渲染进程内将要工作的线程：</p>
+<ul>
+<li>主线程(Main thread)：<strong>下载资源、执行js、计算样式、进行布局、绘制合成</strong></li>
+<li>光栅线程（Raster thread）</li>
+<li>合成线程（Compositor thread）</li>
+<li>工作线程（Worker thread）</li>
+</ul>
+<p>在下面的渲染过程中，其实就是这四个进程的互相配合，我们一起来看下吧。</p>
+<ol>
+<li><p>当渲染过程接收提交消息用于导航和开始接收HTML数据，主线程开始解析文本串（HTML），使之成为一个 <code>Document Object Model</code> ，也就是 <strong>DOM</strong>。</p>
+</li>
+<li><p>网站有用到图片，CSS 和JavaScript的话，这些东西需要从网络或者缓存中加载，主线程可以边请求，边预加载构建DOM。</p>
+<p><img src="https://i.loli.net/2021/01/31/iUmOeJc1daWs2Z9.png"></p>
+</li>
+<li><p>当HTML解析器找到 <code>&lt;script&gt;</code> 标签后，将会暂停HTML解析，并且必须加载、解析和执行 JavaScript的代码。为什么？因为JavaScript 可以使用诸如 <code>document.write()</code> 更改整个DOM结构！所以开发人员在写代码的时候可以在 <code>&lt;script&gt;</code> 标签上加 <code>async</code> 或者 <code>defer</code> 属性。然后浏览器将会异步加载并运行JavaScript，不会阻止解析。</p>
+</li>
+<li><p>主线程解析CSS样式，并把CSS样式一一对应到DOM节点上，注意，此时CSS页面还没有生效，只是样式和节点绑定了关系。</p>
+<p><img src="https://i.loli.net/2021/01/31/CYHbptVyWI3TwmS.png"></p>
+</li>
+<li><p>接下来CSS根据DOM节点，会生成类似于DOM结构的一个布局树，仅包含了页面上可见内容的信息，如果有 <code>display: none</code> 等，则该元素不属于布局树。如果有<code>p::before &#123;content:&quot;123&quot;&#125;</code> 等伪类的存在，就算它不在DOM中，也会包含在布局树中。</p>
+<p><img src="https://i.loli.net/2021/01/31/NwxgPsyOqojVh2p.png"></p>
+<p>在此绘制步骤中，主线程遍历布局树以创建绘制记录。绘画记录是绘画过程的注释，例如“先是背景，然后是文本，然后是矩形”，类似 <code>canvas</code>。</p>
+<p>注意：在渲染的时候，每个步骤前面操作的结果都用于创建新数据，如果布局树发生了更改，文档受影响的部分就会重新绘制，也就是 <strong>重绘</strong>，开发过程中要尽量避免这一现象。</p>
+</li>
+<li><p>至此浏览器知道了：文档的结构，每个DOM元素的样式，页面的几何形状以及绘制的顺序。把这些东西换转为屏幕上像素我们称之为 <strong>光栅化</strong>。在现代浏览器中执行这一行为的过程，称为 **合成(Compositing)**，就是把页面各个部分分成若干层，分别进行栅格化，然后合成器线程的单独线程中进行合成，一个层可以称之为一个 layer。</p>
+<p><img src="https://i.loli.net/2021/01/31/KkTc9AaRDru4iGQ.png"></p>
+</li>
+<li><p>层分好了并确定了顺序之后，主线程就把这个信息提交给合成线程，然后合成器线程把每个图层栅格化，发送给栅格线程，栅格线程把他们存储在GPU内存内。</p>
+<p><img src="https://i.loli.net/2021/01/31/GxOo9LUg2EY7HXi.png"></p>
+</li>
+<li><p>最终，合成线程将栅格化的块合成帧，并通过IPC传递给浏览器进程，显示在屏幕上。</p>
+<p><img src="https://i.loli.net/2021/01/31/E9xCQJ1vSYoGegl.png"></p>
+</li>
+</ol>
+<p>至此，浏览器的请求，响应和渲染过程结束！</p>
+<p>（一半了，稍微休息一下，我们再继续！）</p>
+<h2 id="JS单线程"><a href="#JS单线程" class="headerlink" title="JS单线程"></a>JS单线程</h2><p>回顾一下，浏览器的渲染进程中，主线程里包括了执行JS，那也就意味着：</p>
+<p><strong>JS在浏览器的 渲染进程(Rendered Process) 的 主线程(Main Thread) 内</strong>！</p>
+<p><img src="https://i.loli.net/2021/01/31/6qvbFOlATQeai2U.png"></p>
+<p><strong>记住：JS是被设计成单线程的！</strong></p>
+<blockquote>
+<p>JavaScript的单线程，与它的用途有关。作为浏览器脚本语言，JavaScript的主要用途是与用户互动，以及操作DOM。这决定了它只能是单线程，否则会带来很复杂的同步问题。比如，假定JavaScript同时有两个线程，一个线程在某个DOM节点上添加内容，另一个线程删除了这个节点，这时浏览器应该以哪个线程为准？     —— 阮一峰</p>
+</blockquote>
+<p>所以叙述出来就是：JS逻辑 和 UI渲染 是在一个线程中顺序发生的，二者同一时间只可以存在一个。继续回顾一下上面渲染所提到的，HTML解析器必须等待JS运行，JS是可以操作DOM 和 布局树的，会干扰到主线程在解析HTML的顺序，从而影响结果，所以为了页面的渲染统一，JS被设计成了 执行阻塞UI渲染型。</p>
+<p>同时也反映出了一个问题：JS过多会造成页面卡顿，因为走不下去了。所以JS的逻辑一定不能冗余。</p>
+<h2 id="任务队列"><a href="#任务队列" class="headerlink" title="任务队列"></a>任务队列</h2><p>既然JS是单线程，也就意味着里面的逻辑是排队运行的，后一个任务必须等前一个结束才可以运行。这样就会出一个问题，有没有一种可能是挂起不那么重要的任务，先走重要的，等结束之后再执行挂起的任务呢？</p>
+<p>按照这个说法的话，所有任务就可以分成：<strong>同步任务(sync)</strong> 和 <strong>异步任务(async)</strong> ，同步任务就是主线程里面的排队进行，异步任务就是不进入主线程，进入一个 “任务队列(task queue)” 的地方呆着，看着主线程里的任务进行，一旦发现主线程的同步任务执行完了，就通知主线程，说我这里的异步任务可以执行了，该任务才会进入主线程执行。</p>
+<p>所以有没有发现，那些鼠标点击事件，页面滚动，回调函数，http请求……其实就在任务队列里面。</p>
+<h2 id="事件循环-Event-Loop"><a href="#事件循环-Event-Loop" class="headerlink" title="事件循环(Event Loop)"></a>事件循环(Event Loop)</h2><h3 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h3><p>有了任务队列的存在，就会有事件循环的存在，因为任务队列中可能有很多任务，一个在任务队列的任务进入到主线程后，任务队列依然会看着主线程，看看刚进去的这个有没有执行完毕，毕竟任务队列里还有很多没执行的任务，所以主线程去读取任务队列是循环不断的，也就叫做了 <strong>事件循环</strong>。</p>
+<p>这里放张网图，基本上一看就明白了（参考自Philip Roberts的演讲《<a target="_blank" rel="noopener" href="http://vimeo.com/96425312">Help, I’m stuck in an event-loop</a>》）</p>
+<p><img src="https://i.loli.net/2021/01/31/DwyaGmCNZA5dgep.png"></p>
+<h3 id="定时器"><a href="#定时器" class="headerlink" title="定时器"></a>定时器</h3><p>这个有点特殊，单独讲一下。</p>
+<p>定时器不是个异步事件，是一个定时事件，但是仍属于一个回调操作，是被放在任务队列中的。</p>
+<p>就算定时器被设置的时间是0，它也仍然会在主线程逻辑走完之后(此时栈清空了)，再执行，所以时间是0的定时器，它可以被理解为希望尽早的执行。</p>
+<blockquote>
+<p>需要注意的是，setTimeout()只是将事件插入了”任务队列”，必须等到当前代码（执行栈）执行完，主线程才会去执行它指定的回调函数。要是当前代码耗时很长，有可能要等很久，所以并没有办法保证，回调函数一定会在setTimeout()指定的时间执行。     ——阮一峰</p>
+</blockquote>
+<h2 id="微任务-MicroTask-和宏任务-MacroTask"><a href="#微任务-MicroTask-和宏任务-MacroTask" class="headerlink" title="微任务(MicroTask)和宏任务(MacroTask)"></a>微任务(MicroTask)和宏任务(MacroTask)</h2><p>这段参考<a target="_blank" rel="noopener" href="https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/">Tasks, microtasks, queues and schedules</a>，一位谷歌开发者人员用实例讲述了任务执行顺序，并带有在线Demo，强烈建议过一遍(英语不好就逐句翻译)。</p>
+<p>在JS中，主线程的任务叫 <code>宏任务(MacroTask)</code> ，宏任务执行完毕后，立即执行的任务叫 <code>微任务(MicroTask)</code> 。</p>
+<p><strong>宏任务：</strong></p>
+<ul>
+<li>主线程已经存在了的任务叫宏任务，从任务队列中进入主线程的任务也叫宏任务，一个宏任务执行过程中，从头到尾不会执行其他的东西</li>
+<li>浏览器会在一个宏任务结束后，在下一个宏任务开始前，对页面进行重新渲染</li>
+</ul>
+<p><strong>微任务：</strong></p>
+<ul>
+<li>当前宏任务执行结束后立即执行的任务叫微任务，也就是说它在前宏任务之后，后宏任务之前，渲染之前！</li>
+<li>它的速度比定时器要快，因为不用等待渲染，定时器是宏任务</li>
+<li>在一个宏任务执行结束后，所有的微任务都会执行完毕(渲染前)</li>
+</ul>
+<p>基于上面的概念，我们可以给常用的任务分下类：</p>
+<ul>
+<li>宏任务：主代码，setTimeout，setInterval，setImmediate，requestAnimationFrame，I/O，UI渲染</li>
+<li>微任务：Promise，process.nextTick，MutationObserve，queueMicrotask</li>
+</ul>
+<p>当然 Vue 中的 nextTick 也就属于微任务了，最后放一张图帮助一下理解：</p>
+<p><img src="https://i.loli.net/2021/01/31/ezIH3RLdm9C8OlS.png"></p>
+<p>参考资料：</p>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="http://www.ruanyifeng.com/blog/2014/10/event-loop.html#comment-text">JavaScript 运行机制详解：再谈Event Loop</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://html.spec.whatwg.org/multipage/webappapis.html#event-loops">Event Loops</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000022950333">浅谈浏览器架构、单线程js、事件循环、消息队列、宏任务和微任务</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000012925872">从浏览器多进程到JS单线程，JS运行机制最全面的一次梳理</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://developers.google.com/web/updates/2018/09/inside-browser-part2">Inside look at modern web browser (part 2)</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://developers.google.com/web/updates/2018/09/inside-browser-part3">Inside look at modern web browser (part 3)</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://html.spec.whatwg.org/multipage/parsing.html#overview-of-the-parsing-model">overview-of-the-parsing-model</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/CS9-WZQlNR5h05HHDo1b">史上最全！图解浏览器的工作原理</a></p>
+</li>
+</ul>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">DaoDaoLee</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://daodaolee.cn/2021/01/31/梳理一下JS的运行机制/">https://daodaolee.cn/2021/01/31/梳理一下JS的运行机制/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://daodaolee.cn">DaoDaoLeeのBlog</a>！</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/JS/">JS</a><a class="post-meta__tags" href="/tags/%E5%BC%82%E6%AD%A5/">异步</a><a class="post-meta__tags" href="/tags/%E4%BB%BB%E5%8A%A1%E9%98%9F%E5%88%97%EF%BC%8C%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF/">任务队列，事件循环</a></div><nav id="pagination"><div class="next-post pull-right"><a href="/2021/01/30/%E7%9F%A5%E5%85%B6%E6%89%80%E4%BB%A5%E7%84%B6%E3%80%90Promise%E7%AF%87%E3%80%91/"><span>知其所以然【Promise篇】</span><i class="fa fa-chevron-right"></i></a></div></nav><div id="gitalk-container"></div><script>var gitalk = new Gitalk({
+  clientID: '0fe8487472ec5c0e5482',
+  clientSecret: '9fc72b10aa52e8ff87754311bd0fb371e5f6c3ac',
+  repo: 'daodaolee.github.io',
+  owner: 'daodaolee',
+  admin: 'daodaolee',
+  id: md5(decodeURI(location.pathname)),
+  language: 'zh-CN'
+})
+gitalk.render('gitalk-container')</script></div></div><footer class="footer-bg" style="background-image: url(https://i.loli.net/2021/01/23/OvztMyob9GYxBgn.jpg)"><div class="layout" id="footer"><div class="copyright">&copy;2019 - 2021 By DaoDaoLee</div><div class="framework-info"><span>驱动 - </span><a target="_blank" rel="noopener" href="http://hexo.io"><span>Hexo</span></a><span class="footer-separator">|</span><span>主题 - </span><a target="_blank" rel="noopener" href="https://github.com/Molunerfinn/hexo-theme-melody"><span>Melody</span></a></div><div class="footer_custom_text">hitokoto</div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span id="busuanzi_container_page_pv"><i class="fa fa-file"></i><span id="busuanzi_value_page_pv"></span><span></span></span></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/js/utils.js?version=1.9.0"></script><script src="/js/fancybox.js?version=1.9.0"></script><script src="/js/sidebar.js?version=1.9.0"></script><script src="/js/copy.js?version=1.9.0"></script><script src="/js/fireworks.js?version=1.9.0"></script><script src="/js/transition.js?version=1.9.0"></script><script src="/js/scroll.js?version=1.9.0"></script><script src="/js/head.js?version=1.9.0"></script><script src="/js/search/local-search.js"></script><script id="ribbon" src="/js/third-party/dynamic-ribbon.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>由</span> <a target="_blank" rel="noopener" href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;">hexo-generator-search</a>
+ <span>提供支持</span></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","model":{"jsonPath":"live2d-widget-model-wanko"},"display":{"superSample":2,"width":210,"height":420,"position":"left","hOffset":0,"vOffset":-20},"log":false,"tagMode":false});</script></body></html>

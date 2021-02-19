@@ -6,7 +6,7 @@
   <link href="https://daodaolee.cn/atom.xml" rel="self"/>
   
   <link href="https://daodaolee.cn/"/>
-  <updated>2021-02-06T13:49:19.658Z</updated>
+  <updated>2021-02-19T11:44:32.806Z</updated>
   <id>https://daodaolee.cn/</id>
   
   <author>
@@ -15,6 +15,30 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>资源加载一丈红?罪魁祸首竟然是CSP!</title>
+    <link href="https://daodaolee.cn/2021/02/19/%E8%B5%84%E6%BA%90%E5%8A%A0%E8%BD%BD%E4%B8%80%E4%B8%88%E7%BA%A2-%E7%BD%AA%E9%AD%81%E7%A5%B8%E9%A6%96%E7%AB%9F%E7%84%B6%E6%98%AFCSP%EF%BC%81/"/>
+    <id>https://daodaolee.cn/2021/02/19/%E8%B5%84%E6%BA%90%E5%8A%A0%E8%BD%BD%E4%B8%80%E4%B8%88%E7%BA%A2-%E7%BD%AA%E9%AD%81%E7%A5%B8%E9%A6%96%E7%AB%9F%E7%84%B6%E6%98%AFCSP%EF%BC%81/</id>
+    <published>2021-02-19T11:43:58.000Z</published>
+    <updated>2021-02-19T11:44:32.806Z</updated>
+    
+    <content type="html"><![CDATA[<p>今天把做好的项目打包放测试环境上之后，发现页面资源全部加载不出来，好久没看见满满的一丈红了！</p><p><img src="https://i.loli.net/2021/02/19/AnLeYjT4z7V2gPJ.png"></p><p>不慌，有问题不要紧，挨个排查解决就好了，既然报错不是404，说明资源是可以加载的，也就是说不是项目打包路径的错。报错 <code>net::ERR_SSL_PROTOCOL_ERROR</code> ，很明显是个 <code>SSL</code> 的问题导致资源无法加载，于是问了一下运维发现测试环境没有配置SSL，怪不得会报错！于是欣慰的让运维加一个 <code>SSL</code> ，问题不就解决了么？完美~</p><p>但是运维回来一句，这个项目不需要https！瞬间感觉不对劲了，不需要https为什么会报SSL的错呢？检查nginx的service配置：</p><figure class="highlight nginx"><table><tr><td class="code"><pre><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span>   <span class="number">9002</span>;</span><br><span class="line">    <span class="attribute">server_name</span>  localhost;</span><br><span class="line"><span class="comment"># ... </span></span><br><span class="line">    <span class="attribute">location</span> / &#123;</span><br><span class="line">      <span class="attribute">root</span>   E:\web\Project;</span><br><span class="line">      <span class="attribute">index</span>  index.html index.htm;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="attribute">error_page</span>   <span class="number">500</span> <span class="number">502</span> <span class="number">503</span> <span class="number">504</span>  /50x.html;</span><br><span class="line">    <span class="attribute">location</span> = /50x.html &#123;</span><br><span class="line">      <span class="attribute">root</span>   html;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>之前的项目都是这样配置的而且也没有什么特殊情况，为什么现在单独它出错了？把root地址换成之前的项目，也能加载出来，nginx重启之后，问题仍然遗留，那很大可能性在代码上了，既然页面可以加载出来index.html，那source一定有index这个文件！此时没有资源加载很正常，可以理解。</p><p><img src="https://i.loli.net/2021/02/19/V1aSNhf5oTQIUxr.png"></p><p>那就看看index里面会不会有什么猫腻？</p><p><img src="https://i.loli.net/2021/02/19/e3MJlmwVtDTpOuN.png"></p><p>有一个之前没用过的 <code>meta</code> 标签，会不会是它引起的呢？把它注释之后打包，what？ 打包后的index里还有它！而且是没有注释的！暴力一点，删掉总不会有了吧，接着打包、部署，果然！页面资源加载成功了！</p><p>这个 <code>Content-Security-Policy</code> 到底为什么阻止页面资源加载？为什么没有SSL的服务器会报一个和SSL有关的错？</p><p>查了半天资料发现事情其实并不简单(正文开始)！</p><h1 id="CSP是什么"><a href="#CSP是什么" class="headerlink" title="CSP是什么"></a>CSP是什么</h1><p>我们都知道，浏览器是有同源策略的，每个站点只允许加载来自自身域的数据，<strong>a.cn</strong> 是无法从 <strong>b.cn</strong> 获取数据的，这样网络就不会杂乱无章了，而且它也保证了网站的安全性(如果做数据共享，请学习：跨资源共享CORS)。</p><p>然而在实际情况下，同源策略不会百分之百阻挡 XSS 等攻击，理论上讲只要有注入(比如a标签的href，script标签的引入，img的src等，就可能会受到攻击)，而 <code>Content-Security-Policy(CSP)</code> 从另一面给浏览器加了层防护，可以极大的减少这种攻击行为的发生。</p><h1 id="原理和使用"><a href="#原理和使用" class="headerlink" title="原理和使用"></a>原理和使用</h1><p><code>CSP</code> 是通过高速浏览器一系列规则，严格规定了页面中哪些范围内的资源可访问，而不在这个范围内的资源统统不能访问。</p><p>使用CSP的方法有两种：</p><ol><li>在服务器上添加 <code>Content-Security-Policy</code> 响应头来指定规则</li><li>HTML中添加 <code>&lt;meta&gt;</code> 标签来指定域规则</li></ol><p>CSP的常用规则：</p><pre><code> 1. 获取指令  * child-src：列出可用于worker 及 frame 形式 嵌入的链接  * connect-src：限制能通过脚本接口加载的url  * default-src：如果其他指令不存在，就会应用该指令的值，提供一个备选项  * font-src：限制字体来源  * frame-src：限制frame和iframe的源地址  * img-src：限制图片的来源  * media-src：限制音视频的来源  * object-src：限制flash及其他插件的来源  * maintest-src：限制声明文件的源地址  * Prefetch-src：限制预加载后者预渲染的源地址  * style-src：限制CSS的来源  * script-src：限制JS的源地址  * worker-src：限制worker，shared worker 或 service worker的地址  * webtrc-src：限制WebTRC的地址 2. 文档指令 * base-uri：限制了可出现在页面 `&lt;base&gt;` 标签中的url * plugin-types：通过限制可以加载的资源类型来限制哪些插件可以被嵌入到文档中。 * sandbox：为请求的资源启用沙盒 * disown-opener：确保资源在导航的时候能脱离父页面 3. 导航指令 * form-action：限制form可以提交的地址 * frame-ancestors：当前页面可以被哪些来源所嵌入(正好和child-src相反)，该指令不能通过 `&lt;meta&gt;` 指定，且只对非HTML文档类型的资源生效 * navigation-to：限制文档可以通过一下任何方式访问url(a, form, window.location, window.open...) 4. 其他指令 * report-uri：制定一个接收CSP报告的地址，浏览器会在指令不通过时发送报告，不能通过 `&lt;meta&gt;` 标签来指定 * block-all-mixed-content：当使用https加载页面时，阻止使用http加载任何资源 * referer：指定会离开当前页的跳转链接的 referer header 信息 * upgrade-insecure-requests：客户端页面将重写，会把 http 改为 https，一般用于站点有大量旧地址需要重写的情况</code></pre><p>服务器写法如下：</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Content-Security-Policy: <span class="keyword">default</span>-src <span class="string">&#x27;self&#x27;</span> http:<span class="comment">//example.com;</span></span><br><span class="line">                         connect-src <span class="string">&#x27;none&#x27;</span>;</span><br><span class="line">Content-Security-Policy: connect-src http:<span class="comment">//example.com/;</span></span><br><span class="line">                         script-src http:<span class="comment">//example.com/</span></span><br></pre></td></tr></table></figure><p>页面写法如下：</p><figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> </span></span><br><span class="line"><span class="tag">      <span class="attr">http-equiv</span>=<span class="string">&quot;Content-Security-Policy&quot;</span> </span></span><br><span class="line"><span class="tag">      <span class="attr">content</span>=<span class="string">&quot;default-src &#x27;self&#x27;;default-src &#x27;unsafe-inline&#x27;;&quot;</span></span></span><br><span class="line"><span class="tag">&gt;</span></span><br></pre></td></tr></table></figure><blockquote><p>CSP 的配置是很灵活的。每条指令可指定多个来源，空格分开。而一条 CSP 规则可由多条指令组成，指令间用分号隔开。各指令间没有顺序的要求，因为每条指令都是各司其职。甚至一次响应中， <strong>Content-Security-Policy</strong> 响应头都可以重复设置。</p></blockquote><p>所以，在项目里面配置了如下代码，而服务器没有配置https，就会报错:</p><figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">http-equiv</span>=<span class="string">Content-Security-Policy</span> <span class="attr">content</span>=<span class="string">upgrade-insecure-requests</span>&gt;</span></span><br></pre></td></tr></table></figure><p>在前端开发过程中，也要时刻注意这些细节，避免甩锅最后到自己头上！</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;今天把做好的项目打包放测试环境上之后，发现页面资源全部加载不出来，好久没看见满满的一丈红了！&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://i.loli.net/2021/02/19/AnLeYjT4z7V2gPJ.png&quot;&gt;&lt;/p&gt;
+&lt;p&gt;不慌，有问题不要紧，挨个排查</summary>
+      
+    
+    
+    
+    
+    <category term="http" scheme="https://daodaolee.cn/tags/http/"/>
+    
+  </entry>
   
   <entry>
     <title>重学JavaScript【作用域、执行上下文和垃圾回收】</title>

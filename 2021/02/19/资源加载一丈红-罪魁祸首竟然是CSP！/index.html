@@ -29,62 +29,60 @@
 <h1 id="原理和使用"><a href="#原理和使用" class="headerlink" title="原理和使用"></a>原理和使用</h1><p><code>CSP</code> 是通过高速浏览器一系列规则，严格规定了页面中哪些范围内的资源可访问，而不在这个范围内的资源统统不能访问。</p>
 <p>使用CSP的方法有两种：</p>
 <ol>
-<li>在服务器上添加 <code>Content-Security-Policy</code> 响应头来指定规则</li>
-<li>HTML中添加 <code>&lt;meta&gt;</code> 标签来指定域规则</li>
+<li><p>在服务器上添加 <code>Content-Security-Policy</code> 响应头来指定规则</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Content-Security-Policy: <span class="keyword">default</span>-src <span class="string">&#x27;self&#x27;</span> http:<span class="comment">//example.com;</span></span><br><span class="line">                        connect-src <span class="string">&#x27;none&#x27;</span>;</span><br><span class="line">Content-Security-Policy: connect-src http:<span class="comment">//example.com/;</span></span><br><span class="line">                        script-src http:<span class="comment">//example.com/</span></span><br></pre></td></tr></table></figure></li>
+<li><p>HTML中添加 <code>&lt;meta&gt;</code> 标签来指定域规则</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> </span></span><br><span class="line"><span class="tag">       <span class="attr">http-equiv</span>=<span class="string">&quot;Content-Security-Policy&quot;</span> </span></span><br><span class="line"><span class="tag">       <span class="attr">content</span>=<span class="string">&quot;default-src &#x27;self&#x27;;default-src &#x27;unsafe-inline&#x27;;&quot;</span></span></span><br><span class="line"><span class="tag">&gt;</span></span><br></pre></td></tr></table></figure>
+<p>以下为CSP的常用规则：</p>
+</li>
 </ol>
-<p>CSP的常用规则：</p>
 <ul>
 <li><p>获取指令 </p>
 <ul>
-<li>child-src：列出可用于worker 及 frame 形式 嵌入的链接</li>
-<li><pre><code>* connect-src：限制能通过脚本接口加载的url
-* default-src：如果其他指令不存在，就会应用该指令的值，提供一个备选项
-* font-src：限制字体来源
-* frame-src：限制frame和iframe的源地址
-* img-src：限制图片的来源
-* media-src：限制音视频的来源
-* object-src：限制flash及其他插件的来源
-* maintest-src：限制声明文件的源地址
-* Prefetch-src：限制预加载后者预渲染的源地址
-* style-src：限制CSS的来源
-* script-src：限制JS的源地址
-* worker-src：限制worker，shared worker 或 service worker的地址
-* webtrc-src：限制WebTRC的地址</code></pre>
-</li>
+<li><code>child-src</code>：列出可用于worker 及 frame 形式 嵌入的链接</li>
+<li><code>connect-src</code>：限制能通过脚本接口加载的url</li>
+<li><code>default-src</code>：如果其他指令不存在，就会应用该指令的值，提供一个备选项</li>
+<li><code>font-src</code>：限制字体来源</li>
+<li><code>frame-src</code>：限制frame和iframe的源地址</li>
+<li><code>img-src</code>：限制图片的来源</li>
+<li><code>media-src</code>：限制音视频的来源</li>
+<li><code>object-src</code>：限制flash及其他插件的来源</li>
+<li><code>maintest-src</code>：限制声明文件的源地址</li>
+<li><code>prefetch-src</code>：限制预加载后者预渲染的源地址</li>
+<li><code>style-src</code>：限制CSS的来源</li>
+<li><code>script-src</code>：限制JS的源地址</li>
+<li><code>worker-src</code>：限制worker，shared worker 或 service worker的地址</li>
+<li><code>webtrc-src</code>：限制WebTRC的地址</li>
 </ul>
 </li>
 <li><p>文档指令</p>
 <ul>
-<li>base-uri：限制了可出现在页面 <code>&lt;base&gt;</code> 标签中的url</li>
-<li>plugin-types：通过限制可以加载的资源类型来限制哪些插件可以被嵌入到文档中</li>
-<li>sandbox：为请求的资源启用沙盒</li>
-<li>disown-opener：确保资源在导航的时候能脱离父页面</li>
+<li><code>base-uri</code>：限制了可出现在页面 <code>&lt;base&gt;</code> 标签中的url</li>
+<li><code>plugin-types</code>：通过限制可以加载的资源类型来限制哪些插件可以被嵌入到文档中</li>
+<li><code>sandbox</code>：为请求的资源启用沙盒</li>
+<li><code>disown-opener</code>：确保资源在导航的时候能脱离父页面</li>
 </ul>
 </li>
 <li><p>导航指令</p>
 <ul>
-<li><p>form-action：限制form可以提交的地址</p>
+<li><p><code>form-action</code>：限制form可以提交的地址</p>
 </li>
-<li><p>frame-ancestors：当前页面可以被哪些来源所嵌入(正好和child-src相反)，该指令不能通过 <code>&lt;meta&gt;</code> 指定，且只对非HTML文档类型的资源生效</p>
+<li><p><code>frame-ancestors</code>：当前页面可以被哪些来源所嵌入(正好和child-src相反)，该指令不能通过 <code>&lt;meta&gt;</code> 指定，且只对非HTML文档类型的资源生效</p>
 </li>
-<li><p>navigation-to：限制文档可以通过一下任何方式访问url(a, form, window.location, window.open…)</p>
+<li><p><code>navigation-to</code>：限制文档可以通过一下任何方式访问url(a, form, window.location, window.open…)</p>
 </li>
 </ul>
 </li>
 </ul>
 <ul>
 <li>其他指令<ul>
-<li>report-uri：制定一个接收CSP报告的地址，浏览器会在指令不通过时发送报告，不能通过 <code>&lt;meta&gt;</code> 标签来指定</li>
-<li>block-all-mixed-content：当使用https加载页面时，阻止使用http加载任何资源</li>
-<li>referer：指定会离开当前页的跳转链接的 referer header 信息</li>
-<li>upgrade-insecure-requests：客户端页面将重写，会把 http 改为 https，一般用于站点有大量旧地址需要重写的情况</li>
+<li><code>report-uri</code>：制定一个接收CSP报告的地址，浏览器会在指令不通过时发送报告，不能通过 <code>&lt;meta&gt;</code> 标签来指定</li>
+<li><code>block-all-mixed-content</code>：当使用https加载页面时，阻止使用http加载任何资源</li>
+<li><code>referer</code>：指定会离开当前页的跳转链接的 referer header 信息</li>
+<li><code>upgrade-insecure-requests</code>：客户端页面将重写，会把 http 改为 https，一般用于站点有大量旧地址需要重写的情况</li>
 </ul>
 </li>
 </ul>
-<p>服务器写法如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Content-Security-Policy: <span class="keyword">default</span>-src <span class="string">&#x27;self&#x27;</span> http:<span class="comment">//example.com;</span></span><br><span class="line">                         connect-src <span class="string">&#x27;none&#x27;</span>;</span><br><span class="line">Content-Security-Policy: connect-src http:<span class="comment">//example.com/;</span></span><br><span class="line">                         script-src http:<span class="comment">//example.com/</span></span><br></pre></td></tr></table></figure>
-<p>页面写法如下：</p>
-<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> </span></span><br><span class="line"><span class="tag">      <span class="attr">http-equiv</span>=<span class="string">&quot;Content-Security-Policy&quot;</span> </span></span><br><span class="line"><span class="tag">      <span class="attr">content</span>=<span class="string">&quot;default-src &#x27;self&#x27;;default-src &#x27;unsafe-inline&#x27;;&quot;</span></span></span><br><span class="line"><span class="tag">&gt;</span></span><br></pre></td></tr></table></figure>
 <blockquote>
 <p>CSP 的配置是很灵活的。每条指令可指定多个来源，空格分开。而一条 CSP 规则可由多条指令组成，指令间用分号隔开。各指令间没有顺序的要求，因为每条指令都是各司其职。甚至一次响应中， <strong>Content-Security-Policy</strong> 响应头都可以重复设置。</p>
 </blockquote>

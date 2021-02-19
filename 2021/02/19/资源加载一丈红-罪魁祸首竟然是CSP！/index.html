@@ -30,35 +30,53 @@
 <li>HTML中添加 <code>&lt;meta&gt;</code> 标签来指定域规则</li>
 </ol>
 <p>CSP的常用规则：</p>
-<pre><code> 1. 获取指令
-  * child-src：列出可用于worker 及 frame 形式 嵌入的链接
-  * connect-src：限制能通过脚本接口加载的url
-  * default-src：如果其他指令不存在，就会应用该指令的值，提供一个备选项
-  * font-src：限制字体来源
-  * frame-src：限制frame和iframe的源地址
-  * img-src：限制图片的来源
-  * media-src：限制音视频的来源
-  * object-src：限制flash及其他插件的来源
-  * maintest-src：限制声明文件的源地址
-  * Prefetch-src：限制预加载后者预渲染的源地址
-  * style-src：限制CSS的来源
-  * script-src：限制JS的源地址
-  * worker-src：限制worker，shared worker 或 service worker的地址
-  * webtrc-src：限制WebTRC的地址
- 2. 文档指令
- * base-uri：限制了可出现在页面 `&lt;base&gt;` 标签中的url
- * plugin-types：通过限制可以加载的资源类型来限制哪些插件可以被嵌入到文档中。
- * sandbox：为请求的资源启用沙盒
- * disown-opener：确保资源在导航的时候能脱离父页面
- 3. 导航指令
- * form-action：限制form可以提交的地址
- * frame-ancestors：当前页面可以被哪些来源所嵌入(正好和child-src相反)，该指令不能通过 `&lt;meta&gt;` 指定，且只对非HTML文档类型的资源生效
- * navigation-to：限制文档可以通过一下任何方式访问url(a, form, window.location, window.open...)
- 4. 其他指令
- * report-uri：制定一个接收CSP报告的地址，浏览器会在指令不通过时发送报告，不能通过 `&lt;meta&gt;` 标签来指定
- * block-all-mixed-content：当使用https加载页面时，阻止使用http加载任何资源
- * referer：指定会离开当前页的跳转链接的 referer header 信息
- * upgrade-insecure-requests：客户端页面将重写，会把 http 改为 https，一般用于站点有大量旧地址需要重写的情况</code></pre>
+<ul>
+<li><p>获取指令 </p>
+<ul>
+<li>child-src：列出可用于worker 及 frame 形式 嵌入的链接<pre><code>* connect-src：限制能通过脚本接口加载的url
+* default-src：如果其他指令不存在，就会应用该指令的值，提供一个备选项
+* font-src：限制字体来源
+* frame-src：限制frame和iframe的源地址
+* img-src：限制图片的来源
+* media-src：限制音视频的来源
+* object-src：限制flash及其他插件的来源
+* maintest-src：限制声明文件的源地址
+* Prefetch-src：限制预加载后者预渲染的源地址
+* style-src：限制CSS的来源
+* script-src：限制JS的源地址
+* worker-src：限制worker，shared worker 或 service worker的地址
+* webtrc-src：限制WebTRC的地址</code></pre>
+</li>
+</ul>
+</li>
+<li><p>文档指令</p>
+<ul>
+<li>base-uri：限制了可出现在页面 <code>&lt;base&gt;</code> 标签中的url</li>
+<li>plugin-types：通过限制可以加载的资源类型来限制哪些插件可以被嵌入到文档中</li>
+<li>sandbox：为请求的资源启用沙盒</li>
+<li>disown-opener：确保资源在导航的时候能脱离父页面</li>
+</ul>
+</li>
+<li><p>导航指令</p>
+<ul>
+<li><p>form-action：限制form可以提交的地址</p>
+</li>
+<li><p>frame-ancestors：当前页面可以被哪些来源所嵌入(正好和child-src相反)，该指令不能通过 <code>&lt;meta&gt;</code> 指定，且只对非HTML文档类型的资源生效</p>
+</li>
+<li><p>navigation-to：限制文档可以通过一下任何方式访问url(a, form, window.location, window.open…)</p>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>其他指令<ul>
+<li>report-uri：制定一个接收CSP报告的地址，浏览器会在指令不通过时发送报告，不能通过 <code>&lt;meta&gt;</code> 标签来指定</li>
+<li>block-all-mixed-content：当使用https加载页面时，阻止使用http加载任何资源</li>
+<li>referer：指定会离开当前页的跳转链接的 referer header 信息</li>
+<li>upgrade-insecure-requests：客户端页面将重写，会把 http 改为 https，一般用于站点有大量旧地址需要重写的情况</li>
+</ul>
+</li>
+</ul>
 <p>服务器写法如下：</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Content-Security-Policy: <span class="keyword">default</span>-src <span class="string">&#x27;self&#x27;</span> http:<span class="comment">//example.com;</span></span><br><span class="line">                         connect-src <span class="string">&#x27;none&#x27;</span>;</span><br><span class="line">Content-Security-Policy: connect-src http:<span class="comment">//example.com/;</span></span><br><span class="line">                         script-src http:<span class="comment">//example.com/</span></span><br></pre></td></tr></table></figure>
 <p>页面写法如下：</p>
